@@ -111,8 +111,29 @@ meere::sensor::result CameraModule::connect(int32_t index) {
     }
     RCLCPP_INFO(mLogger, "camera is connected");
 
+    // ==========================================================
+    meere::sensor::IntrinsicParameters intrinsics;
+
+    // Usiamo 'mCamera' e 'meere::sensor::result::success'
+    if (mCamera->intrinsicParameters(intrinsics, 0) == meere::sensor::result::success) {
+        
+        float fx = intrinsics.focal.fx; 
+        float fy = intrinsics.focal.fy;
+        float cx = intrinsics.principal.cx;
+        float cy = intrinsics.principal.cy;
+
+        // Usiamo 'mLogger' invece di 'this->get_logger()'
+        RCLCPP_INFO(mLogger, "=== MATRICE INTRINSECA (K) ===");
+        RCLCPP_INFO(mLogger, "Focale: fx=%.2f, fy=%.2f", fx, fy);
+        RCLCPP_INFO(mLogger, "Centro: cx=%.2f, cy=%.2f", cx, cy);
+    } else {
+        RCLCPP_WARN(mLogger, "Impossibile leggere i parametri intrinseci!");
+    }
+    // ==========================================================
+
     return meere::sensor::result::success;
 }
+
 
 meere::sensor::result CameraModule::connect(std::string serialNumber) {
     if (mSourceList == nullptr || mSourceList->size() == 0) {
@@ -147,8 +168,29 @@ meere::sensor::result CameraModule::connect(std::string serialNumber) {
     }
     RCLCPP_INFO(mLogger, "camera is connected");
 
+    // ==========================================================
+    meere::sensor::IntrinsicParameters intrinsics;
+
+    // Usiamo 'mCamera' e 'meere::sensor::result::success'
+    if (mCamera->intrinsicParameters(intrinsics, 0) == meere::sensor::result::success) {
+        
+        float fx = intrinsics.focal.fx; 
+        float fy = intrinsics.focal.fy;
+        float cx = intrinsics.principal.cx;
+        float cy = intrinsics.principal.cy;
+
+        // Usiamo 'mLogger' invece di 'this->get_logger()'
+        RCLCPP_INFO(mLogger, "=== MATRICE INTRINSECA (K) ===");
+        RCLCPP_INFO(mLogger, "Focale: fx=%.2f, fy=%.2f", fx, fy);
+        RCLCPP_INFO(mLogger, "Centro: cx=%.2f, cy=%.2f", cx, cy);
+    } else {
+        RCLCPP_WARN(mLogger, "Impossibile leggere i parametri intrinseci!");
+    }
+    // ==========================================================
+
     return meere::sensor::result::success;
 }
+
 
 meere::sensor::result CameraModule::run(int32_t type) {
     if (mCamera == nullptr) {
@@ -258,6 +300,8 @@ void CameraModule::publishFrames(const meere::sensor::sptr_frame_list& frames)
                 if (it->frameType() == meere::sensor::FrameType::Depth
                     || it->frameType() == meere::sensor::FrameType::RegisteredDepth) {
                     mDepthImagePublisher->publish(*_msg);
+                    
+                    publishCameraInfo(_msg->header, _sptr_basic_frame->frameWidth(), _sptr_basic_frame->frameHeight());
                 }
                 else if (it->frameType() == meere::sensor::FrameType::Amplitude) {
                     mAmplitudeImagePublisher->publish(*_msg);
@@ -334,8 +378,10 @@ void CameraModule::publishFrames(const meere::sensor::sptr_frame_list& frames)
                     }
                 }
                 mPointCloudPublisher->publish(*_pcl_msg);
+                
             }
         }
+        
     }    
 }
 
@@ -347,6 +393,7 @@ void CameraModule::createPublishers(rclcpp::Node* node)
     mAmplitudeImagePublisher = node->create_publisher<sensor_msgs::msg::Image>("~/amplitude", _qos);
     mRGBImagePublisher = node->create_publisher<sensor_msgs::msg::Image>("~/rgb", _qos);
     mPointCloudPublisher = node->create_publisher<sensor_msgs::msg::PointCloud2>("~/points", _qos);
+    camera_info_pub_ = node->create_publisher<sensor_msgs::msg::CameraInfo>("~/camera_info", _qos);
 }
 
 sensor_msgs::msg::Image::SharedPtr CameraModule::createImageMessage(meere::sensor::FrameType type, int32_t width, int32_t height) 
@@ -425,4 +472,77 @@ sensor_msgs::msg::PointCloud2::SharedPtr CameraModule::createPointCloudMessage(m
     _pclMsg->data.resize(_pclMsg->point_step * _pclMsg->width * _pclMsg->height);
 
     return _pclMsg;
+}
+
+void CameraModule::publishCameraInfo(const std_msgs::msg::Header & header, int width, int height) 
+{
+    // Verifichiamo che il publisher esista
+    if (!camera_info_pub_) {
+        return;
+    }
+
+    auto camera_info_msg = sensor_msgs::msg::CameraInfo();
+    camera_info_msg.header = header;
+
+    // Usiamo le dimensioni dinamiche passate dalla telecamera
+    camera_info_msg.width = width; 
+    camera_info_msg.height = height;
+
+    meere::sensor::IntrinsicParameters intrinsics;
+
+    // CHIAMATA FONDAMENTALE: chiediamo alla telecamera di darci i parametri reali!
+    if (mCamera != nullptr && mCamera->intrinsicParameters(intrinsics, 0) == meere::sensor::result::success) {
+        
+        float fx = intrinsics.focal.fx; 
+        float fy = intrinsics.focal.fy;
+        float cx = intrinsics.principal.cx;
+        float cy = intrinsics.principal.cy;
+
+        // --- MATRICE INTRINSECA K (3x3) ---
+        // Organizzata per righe: [fx,  0, cx,
+        //                          0, fy, cy,
+        //                          0,  0,  1]
+        camera_info_msg.k[0] = fx; 
+        camera_info_msg.k[1] = 0.0;
+        camera_info_msg.k[2] = cx; 
+        camera_info_msg.k[3] = 0.0;
+        camera_info_msg.k[4] = fy; 
+        camera_info_msg.k[5] = cy; 
+        camera_info_msg.k[6] = 0.0;
+        camera_info_msg.k[7] = 0.0;
+        camera_info_msg.k[8] = 1.0;
+
+        // Modello di distorsione (se il firmware non fornisce distorsione, usiamo 0)
+        camera_info_msg.distortion_model = "plumb_bob";
+        camera_info_msg.d = {0.0, 0.0, 0.0, 0.0, 0.0};
+
+        // --- MATRICE DI PROIEZIONE P (3x4) ---
+        // Per telecamere monoculari (non stereo), è identica alla K con una colonna di zeri
+        // [fx,  0, cx,  0,
+        //   0, fy, cy,  0,
+        //   0,  0,  1,  0]
+        camera_info_msg.p[0] = fx;
+        camera_info_msg.p[1] = 0.0;
+        camera_info_msg.p[2] = cx;
+        camera_info_msg.p[3] = 0.0;
+        camera_info_msg.p[4] = 0.0;
+        camera_info_msg.p[5] = fy;
+        camera_info_msg.p[6] = cy;
+        camera_info_msg.p[7] = 0.0;
+        camera_info_msg.p[8] = 0.0;
+        camera_info_msg.p[9] = 0.0;
+        camera_info_msg.p[10] = 1.0;
+        camera_info_msg.p[11] = 0.0;
+
+        // --- MATRICE DI RETTIFICA R (3x3) --- (Identità)
+        camera_info_msg.r[0] = 1.0; camera_info_msg.r[1] = 0.0; camera_info_msg.r[2] = 0.0;
+        camera_info_msg.r[3] = 0.0; camera_info_msg.r[4] = 1.0; camera_info_msg.r[5] = 0.0;
+        camera_info_msg.r[6] = 0.0; camera_info_msg.r[7] = 0.0; camera_info_msg.r[8] = 1.0;
+
+        // Pubblica il messaggio
+        camera_info_pub_->publish(camera_info_msg);
+    } else {
+        // Se per qualche motivo fallisce, stampiamo un avviso (magari solo una volta ogni tanto per non spammare il terminale)
+        RCLCPP_WARN_ONCE(mLogger, "Impossibile leggere gli intrinsic parameters durante la pubblicazione!");
+    }
 }

@@ -78,9 +78,12 @@ install(TARGETS ${PROJECT_NAME}_node
 )
 
 # Install launch files.
-install(DIRECTORY launch
+install(DIRECTORY 
+  launch
+  config
   DESTINATION share/${PROJECT_NAME}/
 )
+
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()

@@ -33,6 +33,7 @@ CubeEyeCameraNode::CubeEyeCameraNode() : Node("cubeeye_camera_node"),
 }
 
 void CubeEyeCameraNode::init()
+
 {
     // init services
     mLastStateService = create_service<cubeeye_camera::srv::LastState>("~/get_last_state", 

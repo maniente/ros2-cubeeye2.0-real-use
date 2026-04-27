@@ -35,6 +35,9 @@ void ModelParameter::build(ModelParameter::Descriptor descriptors[], size_t len)
 }
 
 void ModelParameter::addTo(rclcpp::Node* node) {
+    // 1. Creiamo un vettore per raccogliere i parametri iniziali
+    std::vector<rclcpp::Parameter> initial_params;
+
     // declare parameters
     for (const auto & _desc : mDescriptors) {
         std::string _name = _desc.name;
@@ -52,6 +55,7 @@ void ModelParameter::addTo(rclcpp::Node* node) {
             _descriptor.integer_range.push_back(_range);
             _descriptor.dynamic_typing = true;
 
+            // Dichiara il parametro (ROS2 applicherà qui il valore dal tuo file YAML)
             node->declare_parameter(_name, _desc.default_value, _descriptor);
         }
         else if (_desc.param_type == rcl_interfaces::msg::ParameterType::PARAMETER_BOOL) {
@@ -63,9 +67,19 @@ void ModelParameter::addTo(rclcpp::Node* node) {
             
             node->declare_parameter(_name, _desc.default_value != 0, _descriptor);
         }
+
+        // 2. RECUPERA IL VALORE AGGIORNATO E SALVALO
+        initial_params.push_back(node->get_parameter(_name));
     }
 
+    // 3. Registra il callback per le modifiche FUTURE fatte dall'utente (es. tramite rqt)
     mCallbackHandle = node->add_on_set_parameters_callback(std::bind(&ModelParameter::parametersCallback, this, std::placeholders::_1));    
+
+    // 4. FORZA L'APPLICAZIONE ALL'HARDWARE DEI VALORI DELLO YAML ORA STESSO!
+    if (!initial_params.empty()) {
+        RCLCPP_INFO(node->get_logger(), "Applicazione parametri iniziali alla telecamera...");
+        this->parametersCallback(initial_params);
+    }
 }
 
 rcl_interfaces::msg::SetParametersResult ModelParameter::parametersCallback(const std::vector<rclcpp::Parameter> &parameters) {

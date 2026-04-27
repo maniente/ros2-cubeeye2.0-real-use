@@ -1,0 +1,25 @@
+cubeeye_camera_node:
+  ros__parameters:
+    amplitude_threshold_max: 1000
+    amplitude_threshold_min: 0
+    auto_exposure: true 
+    autorun_onoff: true
+    autorun_serialnumber: I200DU2608000073
+    autorun_frametype: 38
+    depth_range_max: 350 #fino a 35cm 
+    depth_range_min: 200 #da 20 cm
+    flying_pixel_remove_filter: true
+    flying_pixel_remove_threshold: 200
+    framerate: 15
+    integration_time: 1000
+    median_filter: true
+    noise_removal_threshold: 50
+    outlier_remove_filter: true
+    phase_noise_filter: false
+    qos_overrides./parameter_events.publisher.depth: 1000
+    qos_overrides./parameter_events.publisher.durability: volatile
+    qos_overrides./parameter_events.publisher.history: keep_last
+    qos_overrides./parameter_events.publisher.reliability: reliable
+    scattering_filter: false
+    scattering_filter_threshold: 700
+    use_sim_time: false

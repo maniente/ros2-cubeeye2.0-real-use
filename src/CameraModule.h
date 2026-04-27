@@ -41,7 +41,9 @@ private:
 
     sensor_msgs::msg::Image::SharedPtr createImageMessage(meere::sensor::FrameType type, int32_t width, int32_t height);
     sensor_msgs::msg::PointCloud2::SharedPtr createPointCloudMessage(meere::sensor::FrameType type, int32_t width, int32_t height);
-
+    
+    void publishCameraInfo(const std_msgs::msg::Header & header, int width, int height);
+    
 private:
     rclcpp::Logger mLogger;
 
@@ -49,6 +51,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr mAmplitudeImagePublisher;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr mRGBImagePublisher;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr mPointCloudPublisher;
+    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr camera_info_pub_;
 
     std::shared_ptr<ReceivedIntensityPCLFrameSink> mSink;
     meere::sensor::sptr_source_list mSourceList;
