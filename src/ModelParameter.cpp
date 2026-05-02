@@ -116,7 +116,7 @@ rcl_interfaces::msg::SetParametersResult ModelParameter::parametersCallback(cons
                 if (meere::sensor::result::success != mCamera->setProperty(_prop)) {
                     _result.successful = false;
                     _result.reason = "setProperty(" + _prop->key() + ") is failed.";
-                    break;
+                    continue;
                 }
             }
         }

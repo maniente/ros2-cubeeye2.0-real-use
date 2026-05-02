@@ -14,7 +14,7 @@
 
 static ModelParameter::Descriptor descriptors[] = {
     { "amplitude_threshold_max", "amplitude threshold max", rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER, meere::sensor::DataType::U16, 0, 65535, 1, 65535 },
-    { "amplitude_threshold_min", "amplitude threshold min", rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER, meere::sensor::DataType::U16, 0, 255, 1, 0 },
+    { "amplitude_threshold_min", "amplitude threshold min", rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER, meere::sensor::DataType::U16, 0, 65535, 1, 0 },
     { "auto_exposure", "auto exposure on/off", rcl_interfaces::msg::ParameterType::PARAMETER_BOOL, meere::sensor::DataType::Boolean, 0, 0, 0, 1 },
     { "depth_range_min", "depth range min", rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER, meere::sensor::DataType::U16, 0, 65535, 1, 150 },
     { "depth_range_max", "depth range max", rcl_interfaces::msg::ParameterType::PARAMETER_INTEGER, meere::sensor::DataType::U16, 0, 65535, 1, 65535 },
