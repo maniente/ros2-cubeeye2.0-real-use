@@ -1,0 +1,25 @@
+cubeeye_camera_node:
+  ros__parameters:
+    amplitude_threshold_max: 5000 # Capped slightly below max to filter out fully saturated pixels which cause depth artifacts
+    amplitude_threshold_min: 100 # High minimum threshold because white objects at close range have very strong signals. This aggressively cuts out noise and background.
+    auto_exposure: false 
+    autorun_onoff: false
+    autorun_serialnumber: I200DU2608000372
+    autorun_frametype: 38 #autorun disabilitato quindi questo non funziona ma lo uso come valore desiderato per il run
+    depth_range_max: 400 #fino a 40cm
+    depth_range_min: 250 #da 25 cm
+    flying_pixel_remove_filter: true
+    flying_pixel_remove_threshold: 200
+    framerate: 10
+    integration_time: 200 
+    median_filter: true
+    noise_removal_threshold: 100
+    outlier_remove_filter: true
+    phase_noise_filter: false
+    qos_overrides./parameter_events.publisher.depth: 1000
+    qos_overrides./parameter_events.publisher.durability: volatile
+    qos_overrides./parameter_events.publisher.history: keep_last
+    qos_overrides./parameter_events.publisher.reliability: reliable
+    scattering_filter: false 
+    scattering_filter_threshold: 700
+    use_sim_time: false

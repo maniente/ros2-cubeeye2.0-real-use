@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot name="cubeeye_camera">
+
+    <!-- 1. Main Link (Punto di fissaggio Treppiede) -->
+    <link name="camera_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <!-- Dimensioni di ingombro del case (X, Y, Z in metri) -->
+                <box size="0.03 0.06 0.035" />
+            </geometry>
+            <material name="dark_grey">
+                <color rgba="0.2 0.2 0.2 1.0" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.03 0.06 0.035" />
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="depth" />
+
+    <joint name="camera_to_depth_joint" type="fixed">
+        <!-- Solo traslazione verso la lente, senza rotazione angolare perchè già stesso
+        orientamento -->
+        <origin xyz="-0.00866 0.0 0.01985" rpy="0.0 0.0 0.0" />
+        <parent link="camera_link" />
+        <child link="depth" />
+    </joint>
+
+    <!-- 2. Optical Link (REP-103 OpenCV/Visione) -->
+    <link name="camera_optical_frame" />
+
+    <joint name="depth_to_optical_joint" type="fixed">
+        <origin xyz="0.0 0.0 0.0" rpy="-1.5708 0.0 -1.5708" />
+        <parent link="depth" />
+        <child link="camera_optical_frame" />
+    </joint>
+
+    <!-- 4. Frame per la Nuvola di Punti (Point Cloud) -->
+    <link name="pcl" />
+
+    <joint name="pcl_joint" type="fixed">
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        <parent link="depth" />
+        <child link="pcl" />
+    </joint>
+
+    <!-- 5. Frame per l'Ampiezza IR / Intensità (Amplitude) -->
+    <link name="amplitude" />
+
+    <joint name="amplitude_joint" type="fixed">
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        <parent link="depth" />
+        <child link="amplitude" />
+    </joint>
+
+</robot>

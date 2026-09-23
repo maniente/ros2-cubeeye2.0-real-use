@@ -360,21 +360,22 @@ void CameraModule::publishFrames(const meere::sensor::sptr_frame_list& frames)
                 auto _sptr_frame_dataX = _sptr_intensity_pointcloud_frame->frameDataX();
                 auto _sptr_frame_dataY = _sptr_intensity_pointcloud_frame->frameDataY();
                 auto _sptr_frame_dataZ = _sptr_intensity_pointcloud_frame->frameDataZ();
-                // auto _sptr_frame_dataI = _sptr_intensity_pointcloud_frame->frameDataI();
+                auto _sptr_frame_dataI = _sptr_intensity_pointcloud_frame->frameDataI();
 
-                sensor_msgs::msg::PointCloud2::SharedPtr _pcl_msg = createPointCloudMessage(meere::sensor::FrameType::PointCloud,
+                sensor_msgs::msg::PointCloud2::SharedPtr _pcl_msg = createPointCloudMessage(meere::sensor::FrameType::IntensityPointCloud,
                                                                 _sptr_intensity_pointcloud_frame->frameWidth(), _sptr_intensity_pointcloud_frame->frameHeight());
 
                 float* _pcl_data = reinterpret_cast<float*>(&_pcl_msg->data[0]);
                 for (int y = 0 ; y < _sptr_intensity_pointcloud_frame->frameHeight(); y++) {
                     for (int x = 0 ; x < _sptr_intensity_pointcloud_frame->frameWidth(); x++) {
                         int _pos = y * _sptr_intensity_pointcloud_frame->frameWidth() + x;
-                        int _pcl_pos = _pos * 3;
+                        int _pcl_pos = _pos * 4;
 
                         // points
                         _pcl_data[_pcl_pos] = -(*_sptr_frame_dataY)[_pos];
                         _pcl_data[_pcl_pos + 1] = -(*_sptr_frame_dataX)[_pos];
                         _pcl_data[_pcl_pos + 2] = (*_sptr_frame_dataZ)[_pos];
+                        _pcl_data[_pcl_pos + 3] = (*_sptr_frame_dataI)[_pos];
                     }
                 }
                 mPointCloudPublisher->publish(*_pcl_msg);
@@ -452,9 +453,16 @@ sensor_msgs::msg::PointCloud2::SharedPtr CameraModule::createPointCloudMessage(m
     _pclMsg->is_bigendian = false;
     _pclMsg->is_dense = false;
 
-    _pclMsg->point_step = (uint32_t)(3 * sizeof(float));
-    _pclMsg->row_step = (uint32_t)(_pclMsg->point_step * width);
-    _pclMsg->fields.resize(3);
+    if (type == meere::sensor::FrameType::IntensityPointCloud) {
+        _pclMsg->point_step = (uint32_t)(4 * sizeof(float));
+        _pclMsg->row_step = (uint32_t)(_pclMsg->point_step * width);
+        _pclMsg->fields.resize(4);
+    } else {
+        _pclMsg->point_step = (uint32_t)(3 * sizeof(float));
+        _pclMsg->row_step = (uint32_t)(_pclMsg->point_step * width);
+        _pclMsg->fields.resize(3);
+    }
+
     _pclMsg->fields[0].name = "z";
     _pclMsg->fields[0].offset = 0;
     _pclMsg->fields[0].datatype = sensor_msgs::msg::PointField::FLOAT32;
@@ -469,6 +477,14 @@ sensor_msgs::msg::PointCloud2::SharedPtr CameraModule::createPointCloudMessage(m
     _pclMsg->fields[2].offset = _pclMsg->fields[1].offset + (uint32_t)sizeof(float);
     _pclMsg->fields[2].datatype = sensor_msgs::msg::PointField::FLOAT32;
     _pclMsg->fields[2].count = 1;
+    
+    if (type == meere::sensor::FrameType::IntensityPointCloud) {
+        _pclMsg->fields[3].name = "intensity";
+        _pclMsg->fields[3].offset = _pclMsg->fields[2].offset + (uint32_t)sizeof(float);
+        _pclMsg->fields[3].datatype = sensor_msgs::msg::PointField::FLOAT32;
+        _pclMsg->fields[3].count = 1;
+    }
+    
     _pclMsg->data.resize(_pclMsg->point_step * _pclMsg->width * _pclMsg->height);
 
     return _pclMsg;

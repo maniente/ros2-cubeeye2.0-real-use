@@ -81,9 +81,9 @@ install(TARGETS ${PROJECT_NAME}_node
 install(DIRECTORY 
   launch
   config
+  urdf
   DESTINATION share/${PROJECT_NAME}/
 )
-
 
 ament_export_dependencies(rosidl_default_runtime)
 ament_package()
